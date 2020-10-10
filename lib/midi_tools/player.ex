@@ -38,8 +38,7 @@ defmodule MIDITools.Player do
        start_time: epoch,
        duration: 0,
        synth: synth,
-       repeat: false,
-       playing: false
+       repeat: false
      }}
   end
 
@@ -48,16 +47,15 @@ defmodule MIDITools.Player do
     {:reply, :ok, %{state | schedule: schedule, schedule_left: schedule, duration: duration}}
   end
 
-  def handle_call(:play, _from, %{playing: true} = state) do
-    {:reply, {:error, :already_started}, state}
-  end
+  def handle_call(:play, _from, %{timer: timer, schedule: schedule} = state) do
+    if timer != nil do
+      Process.cancel_timer(timer, info: false)
+    end
 
-  def handle_call(:play, _from, %{schedule: schedule} = state) do
     start_time = Timex.now()
     timer = start_timer(schedule, start_time)
 
-    {:reply, :ok,
-     %{state | timer: timer, start_time: start_time, schedule_left: schedule, playing: true}}
+    {:reply, :ok, %{state | timer: timer, start_time: start_time, schedule_left: schedule}}
   end
 
   def handle_call({:set_repeat, repeat}, _from, state) do
@@ -66,7 +64,7 @@ defmodule MIDITools.Player do
 
   def handle_call(:stop_playing, _from, %{timer: timer} = state) do
     Process.cancel_timer(timer, info: false)
-    {:reply, :ok, %{state | timer: nil, playing: false}}
+    {:reply, :ok, %{state | timer: nil}}
   end
 
   @impl true
@@ -93,7 +91,7 @@ defmodule MIDITools.Player do
   end
 
   def handle_info(:end, state) do
-    {:noreply, %{state | playing: false, timer: nil}}
+    {:noreply, %{state | timer: nil}}
   end
 
   # Private functions
