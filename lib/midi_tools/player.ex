@@ -7,8 +7,8 @@ defmodule MIDITools.Player do
     GenServer.start_link(__MODULE__, arg, name: __MODULE__)
   end
 
-  def set_schedule(schedule, end_time) do
-    GenServer.call(__MODULE__, {:set_schedule, schedule, end_time})
+  def set_schedule(schedule, duration) do
+    GenServer.call(__MODULE__, {:set_schedule, schedule, duration})
   end
 
   def play do
@@ -36,25 +36,28 @@ defmodule MIDITools.Player do
        schedule: [],
        schedule_left: [],
        start_time: epoch,
-       end_time: 0,
+       duration: 0,
        synth: synth,
-       repeat: false
+       repeat: false,
+       playing: false
      }}
   end
 
   @impl true
-  def handle_call({:set_schedule, schedule, end_time}, _from, state) do
-    {:reply, :ok, %{state | schedule: schedule, schedule_left: schedule, end_time: end_time}}
+  def handle_call({:set_schedule, schedule, duration}, _from, state) do
+    {:reply, :ok, %{state | schedule: schedule, schedule_left: schedule, duration: duration}}
   end
 
-  def handle_call(:play, _from, %{timer: timer} = state) when timer != nil do
-    {:reply, :already_started, state}
+  def handle_call(:play, _from, %{playing: true} = state) do
+    {:reply, {:error, :already_started}, state}
   end
 
   def handle_call(:play, _from, %{schedule: schedule} = state) do
     start_time = Timex.now()
     timer = start_timer(schedule, start_time)
-    {:reply, :ok, %{state | timer: timer, start_time: start_time, schedule_left: schedule}}
+
+    {:reply, :ok,
+     %{state | timer: timer, start_time: start_time, schedule_left: schedule, playing: true}}
   end
 
   def handle_call({:set_repeat, repeat}, _from, state) do
@@ -63,7 +66,7 @@ defmodule MIDITools.Player do
 
   def handle_call(:stop_playing, _from, %{timer: timer} = state) do
     Process.cancel_timer(timer, info: false)
-    {:reply, :ok, %{state | timer: nil}}
+    {:reply, :ok, %{state | timer: nil, playing: false}}
   end
 
   @impl true
@@ -73,21 +76,24 @@ defmodule MIDITools.Player do
           schedule_left: schedule_left,
           start_time: start_time,
           synth: synth,
-          repeat: repeat,
-          end_time: end_time,
-          schedule: schedule
+          duration: duration
         } = state
       ) do
-    {timer, schedule_left} = play_next_command(schedule_left, start_time, synth)
-    state = %{state | timer: timer, schedule_left: schedule_left}
+    {timer, schedule_left} = play_next_command(schedule_left, start_time, duration, synth)
+    {:noreply, %{state | timer: timer, schedule_left: schedule_left}}
+  end
 
-    if repeat and schedule_left == [] do
-      start_time = DateTime.add(start_time, end_time, :millisecond)
-      timer = start_timer(schedule, start_time)
-      {:noreply, %{state | start_time: start_time, timer: timer, schedule_left: schedule}}
-    else
-      {:noreply, state}
-    end
+  def handle_info(
+        :end,
+        %{repeat: true, start_time: start_time, duration: duration, schedule: schedule} = state
+      ) do
+    start_time = DateTime.add(start_time, duration, :millisecond)
+    timer = start_timer(schedule, start_time)
+    {:noreply, %{state | start_time: start_time, timer: timer, schedule_left: schedule}}
+  end
+
+  def handle_info(:end, state) do
+    {:noreply, %{state | playing: false, timer: nil}}
   end
 
   # Private functions
@@ -100,16 +106,26 @@ defmodule MIDITools.Player do
     Process.send_after(self(), :play, delay)
   end
 
-  defp play_next_command([], _start_time, _synth), do: {nil, []}
+  defp play_next_command([], start_time, duration, _synth) do
+    end_time = DateTime.add(start_time, duration, :millisecond)
+    delay = max(Timex.diff(end_time, Timex.now(), :millisecond), 0)
+    timer = Process.send_after(self(), :end, delay)
+    {timer, []}
+  end
 
-  defp play_next_command([{offset, command} | next_schedule] = schedule_left, start_time, synth) do
+  defp play_next_command(
+         [{offset, command} | next_schedule] = schedule_left,
+         start_time,
+         duration,
+         synth
+       ) do
     next_time = DateTime.add(start_time, offset, :millisecond)
     micro_diff = Timex.diff(next_time, Timex.now(), :microsecond)
 
     if micro_diff < 500 do
       # Play command, and try to play next command too.
       MIDISynth.midi(synth, command)
-      play_next_command(next_schedule, start_time, synth)
+      play_next_command(next_schedule, start_time, duration, synth)
     else
       # Command is too far in the future, schedule next timer.
       delay = max(ceil(micro_diff / 1000), 0)
