@@ -19,6 +19,10 @@ defmodule MIDITools.Player do
     GenServer.call(__MODULE__, {:set_repeat, repeat})
   end
 
+  def stop_playing do
+    GenServer.call(__MODULE__, :stop_playing)
+  end
+
   # Server callbacks
 
   @impl true
@@ -55,6 +59,11 @@ defmodule MIDITools.Player do
 
   def handle_call({:set_repeat, repeat}, _from, state) do
     {:reply, :ok, %{state | repeat: repeat}}
+  end
+
+  def handle_call(:stop_playing, _from, %{timer: timer} = state) do
+    Process.cancel_timer(timer, info: false)
+    {:reply, :ok, %{state | timer: nil}}
   end
 
   @impl true
