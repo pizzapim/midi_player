@@ -23,22 +23,30 @@ defmodule MIDITools.Player do
     GenServer.call(__MODULE__, :stop_playing)
   end
 
+  def pause do
+    GenServer.call(__MODULE__, :pause)
+  end
+
+  def resume do
+    GenServer.call(__MODULE__, :resume)
+  end
+
   # Server callbacks
 
   @impl true
   def init(_arg) do
     {:ok, synth} = MIDISynth.start_link([])
-    epoch = Timex.epoch() |> Timex.to_datetime()
 
     {:ok,
      %{
        timer: nil,
        schedule: [],
        schedule_left: [],
-       start_time: epoch,
+       start_time: nil,
        duration: 0,
        synth: synth,
-       repeat: false
+       repeat: false,
+       pause_time: nil
      }}
   end
 
@@ -55,7 +63,8 @@ defmodule MIDITools.Player do
     start_time = Timex.now()
     timer = start_timer(schedule, start_time)
 
-    {:reply, :ok, %{state | timer: timer, start_time: start_time, schedule_left: schedule}}
+    {:reply, :ok,
+     %{state | timer: timer, start_time: start_time, schedule_left: schedule, pause_time: nil}}
   end
 
   def handle_call({:set_repeat, repeat}, _from, state) do
@@ -63,8 +72,42 @@ defmodule MIDITools.Player do
   end
 
   def handle_call(:stop_playing, _from, %{timer: timer} = state) do
+    if timer != nil do
+      Process.cancel_timer(timer, info: false)
+    end
+
+    {:reply, :ok, %{state | timer: nil, pause_time: nil}}
+  end
+
+  def handle_call(:pause, _from, %{pause_time: pause_time} = state) when pause_time != nil do
+    {:reply, {:error, :already_paused}, state}
+  end
+
+  def handle_call(:pause, _from, %{timer: nil} = state) do
+    {:reply, {:error, :not_started}, state}
+  end
+
+  def handle_call(:pause, _from, %{timer: timer} = state) do
     Process.cancel_timer(timer, info: false)
-    {:reply, :ok, %{state | timer: nil}}
+    pause_time = Timex.now()
+
+    {:reply, :ok, %{state | timer: nil, pause_time: pause_time}}
+  end
+
+  def handle_call(:resume, _from, %{pause_time: nil} = state) do
+    {:reply, {:error, :not_paused}, state}
+  end
+
+  def handle_call(
+        :resume,
+        _from,
+        %{start_time: start_time, pause_time: pause_time, schedule_left: schedule_left} = state
+      ) do
+    time_since_pause = Timex.diff(Timex.now(), pause_time, :millisecond)
+    start_time = DateTime.add(start_time, time_since_pause, :millisecond)
+    timer = start_timer(schedule_left, start_time)
+
+    {:reply, :ok, %{state | timer: timer, start_time: start_time, pause_time: nil}}
   end
 
   @impl true
