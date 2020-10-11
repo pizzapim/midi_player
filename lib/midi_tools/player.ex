@@ -2,7 +2,7 @@ defmodule MIDITools.Player do
   use GenServer
 
   @moduledoc """
-  A GenServer for playing a schedule of MIDI commands at certain times.
+  A GenServer for playing a schedule of MIDI commands at predefined times.
   """
 
   # Client API
@@ -16,18 +16,19 @@ defmodule MIDITools.Player do
   end
 
   @doc """
-  Set the current schedule and total duration for the MIDI player.
+  Generate the current schedule defined by the given events.
 
   The list of events is internally converted to MIDI commands.
   If multiple events are scheduled on the same time,
   then they are executed in the same order as in the list.
   The duration makes sure the player plays a (potential) pause after the last
   midi command.
+
+  See `MIDITools.Event` to create events.
   """
-  @spec set_schedule([MIDITools.Event.t()], non_neg_integer()) :: :ok
-  def set_schedule(events, duration) do
-    schedule = convert_events(events)
-    GenServer.call(__MODULE__, {:set_schedule, schedule, duration})
+  @spec generate_schedule([MIDITools.Event.t()], non_neg_integer()) :: :ok
+  def generate_schedule(events, duration) when duration > 0 do
+    GenServer.call(__MODULE__, {:generate_schedule, events, duration})
   end
 
   @doc """
@@ -90,33 +91,25 @@ defmodule MIDITools.Player do
   end
 
   @impl GenServer
-  def handle_call({:set_schedule, schedule, duration}, _from, state) do
-
-    {:reply, :ok, %{state | schedule: schedule, schedule_left: schedule, duration: duration}}
+  def handle_call({:generate_schedule, events, duration}, _from, state) do
+    state = %{state | schedule: convert_events(events)}
+    {:reply, :ok, %{reset(state) | duration: duration}}
   end
 
-  def handle_call(:play, _from, %{timer: timer, schedule: schedule} = state) do
-    if timer != nil do
-      Process.cancel_timer(timer, info: false)
-    end
-
+  def handle_call(:play, _from, %{schedule: schedule} = state) do
     start_time = Timex.now()
     timer = start_timer(schedule, start_time)
 
     {:reply, :ok,
-     %{state | timer: timer, start_time: start_time, schedule_left: schedule, pause_time: nil}}
+     %{reset(state) | timer: timer, start_time: start_time}}
   end
 
   def handle_call({:set_repeat, repeat}, _from, state) do
     {:reply, :ok, %{state | repeat: repeat}}
   end
 
-  def handle_call(:stop_playing, _from, %{timer: timer} = state) do
-    if timer != nil do
-      Process.cancel_timer(timer, info: false)
-    end
-
-    {:reply, :ok, %{state | timer: nil, pause_time: nil}}
+  def handle_call(:stop_playing, _from,  state) do
+    {:reply, :ok, reset(state)}
   end
 
   def handle_call(:pause, _from, %{pause_time: pause_time} = state) when pause_time != nil do
@@ -222,5 +215,13 @@ defmodule MIDITools.Player do
       Map.update(acc, time, midi, &<<&1::binary, midi::binary>>)
     end)
     |> Enum.sort()
+  end
+
+  defp reset(%{timer: timer, schedule: schedule} = state) do
+    if timer != nil do
+      Process.cancel_timer(timer, info: false)
+    end
+
+    %{state | timer: nil, pause_time: nil, schedule_left: schedule}
   end
 end
