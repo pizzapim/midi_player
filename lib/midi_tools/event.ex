@@ -11,8 +11,15 @@ defmodule MIDITools.Event do
 
     defstruct channel: 0, tone: 0, start_time: 0, end_time: 0, velocity: 0
 
-    @spec new(MIDISynth.Command.channel(), non_neg_integer(), non_neg_integer(), non_neg_integer(), MIDISynth.Command.velocity()) :: %Note{}
-    def new(channel, tone, start_time, end_time, velocity) when start_time >= 0 and end_time > start_time do
+    @spec new(
+            MIDISynth.Command.channel(),
+            non_neg_integer(),
+            non_neg_integer(),
+            non_neg_integer(),
+            MIDISynth.Command.velocity()
+          ) :: %Note{}
+    def new(channel, tone, start_time, end_time, velocity)
+        when start_time >= 0 and end_time > start_time do
       %__MODULE__{
         channel: channel,
         tone: tone,
@@ -30,7 +37,8 @@ defmodule MIDITools.Event do
 
     defstruct channel: 0, time: 0, program: 0
 
-    @spec new(MIDISynth.Command.channel(), non_neg_integer(), non_neg_integer()) :: %ChangeProgram{}
+    @spec new(MIDISynth.Command.channel(), non_neg_integer(), non_neg_integer()) ::
+            %ChangeProgram{}
     def new(channel, time, program) do
       %__MODULE__{channel: channel, time: time, program: program}
     end

@@ -29,7 +29,7 @@ defmodule MIDITools.MixProject do
     [
       {:midi_synth, "~> 0.4.0"},
       {:timex, "~> 3.6"},
-      {:ex_doc, "~> 0.22", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.22", only: :dev, runtime: false}
     ]
   end
 end

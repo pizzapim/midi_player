@@ -66,7 +66,7 @@ defmodule MIDITools.Player do
   @doc """
   Resume playback on the player after it has been paused.
   """
-  @spec resume() :: :ok, {:error, :not_paused}
+  @spec(resume() :: :ok, {:error, :not_paused})
   def resume do
     GenServer.call(__MODULE__, :resume)
   end
@@ -100,15 +100,14 @@ defmodule MIDITools.Player do
     start_time = Timex.now()
     timer = start_timer(schedule, start_time)
 
-    {:reply, :ok,
-     %{reset(state) | timer: timer, start_time: start_time}}
+    {:reply, :ok, %{reset(state) | timer: timer, start_time: start_time}}
   end
 
   def handle_call({:set_repeat, repeat}, _from, state) do
     {:reply, :ok, %{state | repeat: repeat}}
   end
 
-  def handle_call(:stop_playing, _from,  state) do
+  def handle_call(:stop_playing, _from, state) do
     {:reply, :ok, reset(state)}
   end
 
