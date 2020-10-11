@@ -7,7 +7,15 @@ defmodule MIDITools.MixProject do
       version: "0.1.0",
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+
+      # Docs
+      name: "MIDITools",
+      source_url: "https://github.com/pizzapim/midi_tools",
+      homepage_url: "https://github.com/pizzapim/midi_tools",
+      docs: [
+        main: "MIDITools"
+      ]
     ]
   end
 
@@ -20,7 +28,8 @@ defmodule MIDITools.MixProject do
   defp deps do
     [
       {:midi_synth, "~> 0.4.0"},
-      {:timex, "~> 3.6"}
+      {:timex, "~> 3.6"},
+      {:ex_doc, "~> 0.22", only: :dev, runtime: false},
     ]
   end
 end

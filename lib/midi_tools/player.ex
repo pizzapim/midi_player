@@ -1,39 +1,73 @@
 defmodule MIDITools.Player do
   use GenServer
 
+  @moduledoc """
+  A GenServer for playing a schedule of MIDI commands at certain times.
+  """
+
   # Client API
 
-  def start_link(arg \\ nil) do
-    GenServer.start_link(__MODULE__, arg, name: __MODULE__)
+  @doc """
+  Start the MIDI player.
+  """
+  @spec start_link() :: GenServer.on_start()
+  def start_link do
+    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
+  @doc """
+  Set the current schedule and total duration for the MIDI player.
+  The duration makes sure the player plays a (potential) pause after the last
+  midi command.
+  """
+  @spec set_schedule(MIDITools.Schedule.t(), non_neg_integer()) :: :ok
   def set_schedule(schedule, duration) do
     GenServer.call(__MODULE__, {:set_schedule, schedule, duration})
   end
 
+  @doc """
+  Play the current MIDI schedule from the start.
+  """
+  @spec play() :: :ok
   def play do
     GenServer.call(__MODULE__, :play)
   end
 
-  def set_repeat(repeat) do
+  @doc """
+  Set the player on repeat or not.
+  """
+  @spec set_repeat(boolean()) :: :ok
+  def set_repeat(repeat) when is_boolean(repeat) do
     GenServer.call(__MODULE__, {:set_repeat, repeat})
   end
 
+  @doc """
+  Stop the player and cancel the pause.
+  """
+  @spec stop_playing() :: :ok
   def stop_playing do
     GenServer.call(__MODULE__, :stop_playing)
   end
 
+  @doc """
+  Pause the player. See `MIDITools.Player.resume/0` for resuming playback.
+  """
+  @spec pause() :: :ok | {:error, :already_paused | :not_started}
   def pause do
     GenServer.call(__MODULE__, :pause)
   end
 
+  @doc """
+  Resume playback on the player after it has been paused.
+  """
+  @spec resume() :: :ok, {:error, :not_paused}
   def resume do
     GenServer.call(__MODULE__, :resume)
   end
 
   # Server callbacks
 
-  @impl true
+  @impl GenServer
   def init(_arg) do
     {:ok, synth} = MIDISynth.start_link([])
 
@@ -50,7 +84,7 @@ defmodule MIDITools.Player do
      }}
   end
 
-  @impl true
+  @impl GenServer
   def handle_call({:set_schedule, schedule, duration}, _from, state) do
     {:reply, :ok, %{state | schedule: schedule, schedule_left: schedule, duration: duration}}
   end
@@ -110,7 +144,7 @@ defmodule MIDITools.Player do
     {:reply, :ok, %{state | timer: timer, start_time: start_time, pause_time: nil}}
   end
 
-  @impl true
+  @impl GenServer
   def handle_info(
         :play,
         %{
