@@ -44,7 +44,7 @@ defmodule MIDITools.Event do
   @doc """
   Converts the event to a list of MIDI commands.
   """
-  @spec convert(t()) :: MIDITools.Schedule.t()
+  @spec convert(t()) :: [{non_neg_integer(), binary()}]
   def convert(%Note{
         channel: channel,
         tone: tone,

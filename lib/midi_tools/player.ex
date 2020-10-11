@@ -17,11 +17,16 @@ defmodule MIDITools.Player do
 
   @doc """
   Set the current schedule and total duration for the MIDI player.
+
+  The list of events is internally converted to MIDI commands.
+  If multiple events are scheduled on the same time,
+  then they are executed in the same order as in the list.
   The duration makes sure the player plays a (potential) pause after the last
   midi command.
   """
-  @spec set_schedule(MIDITools.Schedule.t(), non_neg_integer()) :: :ok
-  def set_schedule(schedule, duration) do
+  @spec set_schedule([MIDITools.Event.t()], non_neg_integer()) :: :ok
+  def set_schedule(events, duration) do
+    schedule = convert_events(events)
     GenServer.call(__MODULE__, {:set_schedule, schedule, duration})
   end
 
@@ -86,6 +91,7 @@ defmodule MIDITools.Player do
 
   @impl GenServer
   def handle_call({:set_schedule, schedule, duration}, _from, state) do
+
     {:reply, :ok, %{state | schedule: schedule, schedule_left: schedule, duration: duration}}
   end
 
@@ -207,5 +213,14 @@ defmodule MIDITools.Player do
       timer = Process.send_after(self(), :play, delay)
       {timer, schedule_left}
     end
+  end
+
+  defp convert_events(events) do
+    events
+    |> Enum.flat_map(&MIDITools.Event.convert/1)
+    |> Enum.reduce(%{}, fn {time, midi}, acc ->
+      Map.update(acc, time, midi, &<<&1::binary, midi::binary>>)
+    end)
+    |> Enum.sort()
   end
 end
