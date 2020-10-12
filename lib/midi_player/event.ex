@@ -1,6 +1,7 @@
 defmodule MIDIPlayer.Event do
   @moduledoc """
   Several musical events which can be converted to MIDI commands.
+
   All timings are in milliseconds.
   """
 

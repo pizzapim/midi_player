@@ -18,7 +18,16 @@ On OSX:
 brew install fluidsynth
 ```
 
+Clone this repo or put the [Hex dependency](https://hex.pm/packages/midi_player) in your mix.exs:
+
+```elixir
+{:midi_player, "~> 0.1.0"}
+```
+
 ## Examples
+
+MIDIPlayer takes "events" which for example represent to play a note for a time span.
+It then converts these events to MIDI commands and schedules them.
 
 First, let's create some events.
 This plays a piano sound for the C note for 1 second:
