@@ -5,6 +5,8 @@ defmodule MIDIPlayer do
   A GenServer for playing a schedule of MIDI commands at predefined times.
   """
 
+  @type schedule :: [{non_neg_integer(), binary()}]
+
   # Client API
 
   @doc """
@@ -66,9 +68,21 @@ defmodule MIDIPlayer do
   @doc """
   Resume playback on the player after it has been paused.
   """
-  @spec(resume() :: :ok, {:error, :not_paused})
+  @spec resume() :: :ok | {:error, :not_paused}
   def resume do
     GenServer.call(__MODULE__, :resume)
+  end
+
+  @doc """
+  Get the current schedule of the player.
+
+  The schedule is a list of tuples of a time in milliseconds and the
+  corresponding bitstream of MIDI commands to be played at that time.
+  The list is guaranteed to be ascending in time.
+  """
+  @spec get_schedule() :: schedule()
+  def get_schedule do
+    GenServer.call(__MODULE__, :get_schedule)
   end
 
   # Server callbacks
@@ -140,6 +154,10 @@ defmodule MIDIPlayer do
     timer = start_timer(schedule_left, start_time)
 
     {:reply, :ok, %{state | timer: timer, start_time: start_time, pause_time: nil}}
+  end
+
+  def handle_call(:get_schedule, _from, %{schedule: schedule} = state) do
+    {:reply, schedule, state}
   end
 
   @impl GenServer
