@@ -55,3 +55,11 @@ Then load the events, and play them!
 iex> MIDIPlayer.generate_schedule([piano, change, violin1, violin2], 3000)
 iex> MIDIPlayer.play()
 ```
+
+## Thanks
+
+This project uses [MIDISynth](https://github.com/fhunleth/midi_synth)
+for generating MIDI commands and operating the FluidSynth synthesizer.
+It also uses [Timex](https://github.com/bitwalker/timex)
+for timing related functionality.
+Inspiration from [Beats](https://github.com/mtrudel/beats).
