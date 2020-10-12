@@ -5,6 +5,9 @@ defmodule MIDIPlayer do
   A GenServer for playing a schedule of MIDI commands at predefined times.
   """
 
+  # TBD: I think cancelling the timer could introduce a race condition.
+  # Could maybe match timer's reference to saved one?
+
   @type schedule :: [{non_neg_integer(), binary()}]
 
   # Client API

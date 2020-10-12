@@ -1,21 +1,57 @@
 # MIDIPlayer
 
-**TODO: Add description**
+A MIDI player for Elixir.
 
-## Installation
+## Prerequisites
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `midi_player` to your list of dependencies in `mix.exs`:
+Install FluidSynth to play MIDI commands:
 
-```elixir
-def deps do
-  [
-    {:midi_player, "~> 0.1.0"}
-  ]
-end
+On Linux:
+
+```sh
+sudo apt install libfluidsynth-dev
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/midi_player](https://hexdocs.pm/midi_player).
+On OSX:
 
+```sh
+brew install fluidsynth
+```
+
+## Examples
+
+First, let's create some events.
+This plays a piano sound for the C note for 1 second:
+
+```elixir
+iex> piano = MIDIPlayer.Event.Note.new(0, 60, 0, 1000, 127)
+```
+
+We can change the instrument to a violin after one second like so:
+
+```elixir
+iex> change = MIDIPlayer.Event.ChangeProgram.new(0, 1000, 41)
+```
+
+(Note that it could be simpler to use another MIDI channel for another instrument.)
+
+Finally, play two notes on the violin at the same time:
+
+```elixir
+iex> violin1 = MIDIPlayer.Event.Note.new(0, 67, 1000, 3000, 127)
+iex> violin2 = MIDIPlayer.Event.Note.new(0, 64, 1000, 3000, 127)
+```
+
+Now we are ready to play these events.
+First start the player like so:
+
+```elixir
+iex> MIDIPlayer.start_link()
+```
+
+Then load the events, and play them!
+
+```elixir
+iex> MIDIPlayer.generate_schedule([piano, change, violin1, violin2], 3000)
+iex> MIDIPlayer.play()
+```
