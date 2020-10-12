@@ -1,4 +1,4 @@
-defmodule MIDITools.Player do
+defmodule MIDIPlayer do
   use GenServer
 
   @moduledoc """
@@ -24,9 +24,9 @@ defmodule MIDITools.Player do
   The duration makes sure the player plays a (potential) pause after the last
   midi command.
 
-  See `MIDITools.Event` to create events.
+  See `MIDIPlayer.Event` to create events.
   """
-  @spec generate_schedule([MIDITools.Event.t()], non_neg_integer()) :: :ok
+  @spec generate_schedule([MIDIPlayer.Event.t()], non_neg_integer()) :: :ok
   def generate_schedule(events, duration) when duration > 0 do
     GenServer.call(__MODULE__, {:generate_schedule, events, duration})
   end
@@ -56,7 +56,7 @@ defmodule MIDITools.Player do
   end
 
   @doc """
-  Pause the player. See `MIDITools.Player.resume/0` for resuming playback.
+  Pause the player. See `MIDIPlayer.Player.resume/0` for resuming playback.
   """
   @spec pause() :: :ok | {:error, :already_paused | :not_started}
   def pause do
@@ -209,7 +209,7 @@ defmodule MIDITools.Player do
 
   defp convert_events(events) do
     events
-    |> Enum.flat_map(&MIDITools.Event.convert/1)
+    |> Enum.flat_map(&MIDIPlayer.Event.convert/1)
     |> Enum.reduce(%{}, fn {time, midi}, acc ->
       Map.update(acc, time, midi, &<<&1::binary, midi::binary>>)
     end)

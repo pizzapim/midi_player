@@ -1,8 +1,8 @@
-defmodule MIDITools.PlayerTest do
+defmodule MIDIPlayerTest do
   use ExUnit.Case
-  doctest MIDITools.Player
+  doctest MIDIPlayer
 
-  alias MIDITools.Player
+  alias MIDIPlayer, as: Player
 
   setup do
     {:ok, _pid} = Player.start_link()
@@ -10,7 +10,7 @@ defmodule MIDITools.PlayerTest do
   end
 
   setup_all do
-    events = Enum.map(1..4, &MIDITools.Event.Note.new(9, 51, &1 * 500, (&1 + 1) * 500, 127))
+    events = Enum.map(1..4, &MIDIPlayer.Event.Note.new(9, 51, &1 * 500, (&1 + 1) * 500, 127))
     duration = 2000
     [events: events, duration: duration]
   end

@@ -1,8 +1,8 @@
-defmodule MIDITools.EventTest do
+defmodule MIDIPlayer.EventTest do
   use ExUnit.Case
-  doctest MIDITools.Event
+  doctest MIDIPlayer.Event
 
-  alias MIDITools.Event
+  alias MIDIPlayer.Event
 
   test "note event" do
     assert %Event.Note{channel: 0, tone: 60, start_time: 1, end_time: 1000, velocity: 127} =

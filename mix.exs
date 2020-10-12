@@ -1,20 +1,20 @@
-defmodule MIDITools.MixProject do
+defmodule MIDIPlayer.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :midi_tools,
+      app: :midi_player,
       version: "0.1.0",
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
 
       # Docs
-      name: "MIDITools",
-      source_url: "https://github.com/pizzapim/midi_tools",
-      homepage_url: "https://github.com/pizzapim/midi_tools",
+      name: "MIDIPlayer",
+      source_url: "https://github.com/pizzapim/midi_player",
+      homepage_url: "https://github.com/pizzapim/midi_player",
       docs: [
-        main: "MIDITools"
+        main: "MIDIPlayer"
       ]
     ]
   end
