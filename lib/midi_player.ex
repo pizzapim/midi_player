@@ -12,14 +12,18 @@ defmodule MIDIPlayer do
 
   # Client API
 
+  @midi_synth_args [:soundfont]
+
   @doc """
   Start the MIDI player.
 
-  Arguments are the same as `MIDISynth.start_link/2`.
+  The soundfont path can be set with the :soundfont argument.
   """
-  @spec start_link(keyword(), GenServer.options()) :: GenServer.on_start()
-  def start_link(args, opts \\ []) do
-    GenServer.start_link(__MODULE__, args, opts)
+  @spec start_link(GenServer.options()) :: GenServer.on_start()
+  def start_link(opts \\ []) do
+    init_args = Keyword.take(opts, @midi_synth_args)
+    server_args = Keyword.drop(opts, @midi_synth_args)
+    GenServer.start_link(__MODULE__, init_args, server_args)
   end
 
   @doc """

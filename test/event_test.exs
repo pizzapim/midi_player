@@ -10,8 +10,7 @@ defmodule MIDIPlayer.EventTest do
   end
 
   test "change program event" do
-    assert %Event.ChangeProgram{channel: 0, time: 1, program: 40} =
-             Event.change_program(0, 1, 40)
+    assert %Event.ChangeProgram{channel: 0, time: 1, program: 40} = Event.change_program(0, 1, 40)
   end
 
   test "note event conversion" do

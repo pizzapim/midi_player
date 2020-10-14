@@ -55,7 +55,7 @@ Now we are ready to play these events.
 First start the player like so:
 
 ```elixir
-iex> {:ok, player} = MIDIPlayer.start_link([])
+iex> {:ok, player} = MIDIPlayer.start_link()
 ```
 
 Then load the events, and play them!
