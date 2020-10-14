@@ -14,10 +14,12 @@ defmodule MIDIPlayer do
 
   @doc """
   Start the MIDI player.
+
+  Arguments are the same as `MIDISynth.start_link/2`.
   """
-  @spec start_link() :: GenServer.on_start()
-  def start_link do
-    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+  @spec start_link(keyword(), GenServer.options()) :: GenServer.on_start()
+  def start_link(args, opts \\ []) do
+    GenServer.start_link(__MODULE__, args, opts)
   end
 
   @doc """
@@ -31,49 +33,51 @@ defmodule MIDIPlayer do
 
   See `MIDIPlayer.Event` to create events.
   """
-  @spec generate_schedule([MIDIPlayer.Event.t()], non_neg_integer()) :: :ok
-  def generate_schedule(events, duration) when duration > 0 do
-    GenServer.call(__MODULE__, {:generate_schedule, events, duration})
+  @spec generate_schedule(GenServer.server(), [MIDIPlayer.Event.t()], non_neg_integer()) :: :ok
+  def generate_schedule(player, events, duration) when duration > 0 do
+    GenServer.call(player, {:generate_schedule, events, duration})
   end
 
   @doc """
   Play the current MIDI schedule from the start.
   """
-  @spec play() :: :ok
-  def play do
-    GenServer.call(__MODULE__, :play)
+  @spec play(GenServer.server()) :: :ok
+  def play(player) do
+    GenServer.call(player, :play)
   end
 
   @doc """
   Set the player on repeat or not.
   """
-  @spec set_repeat(boolean()) :: :ok
-  def set_repeat(repeat) when is_boolean(repeat) do
-    GenServer.call(__MODULE__, {:set_repeat, repeat})
+  @spec set_repeat(GenServer.server(), boolean()) :: :ok
+  def set_repeat(player, repeat) when is_boolean(repeat) do
+    GenServer.call(player, {:set_repeat, repeat})
   end
 
   @doc """
   Stop the player and cancel the pause.
   """
-  @spec stop_playing() :: :ok
-  def stop_playing do
-    GenServer.call(__MODULE__, :stop_playing)
+  @spec stop_playing(GenServer.server()) :: :ok
+  def stop_playing(player) do
+    GenServer.call(player, :stop_playing)
   end
 
   @doc """
-  Pause the player. See `MIDIPlayer.Player.resume/0` for resuming playback.
+  Pause the player.
+
+  See `MIDIPlayer.resume/1` for resuming playback.
   """
-  @spec pause() :: :ok | {:error, :already_paused | :not_started}
-  def pause do
-    GenServer.call(__MODULE__, :pause)
+  @spec pause(GenServer.server()) :: :ok | {:error, :already_paused | :not_started}
+  def pause(player) do
+    GenServer.call(player, :pause)
   end
 
   @doc """
   Resume playback on the player after it has been paused.
   """
-  @spec resume() :: :ok | {:error, :not_paused}
-  def resume do
-    GenServer.call(__MODULE__, :resume)
+  @spec resume(GenServer.server()) :: :ok | {:error, :not_paused}
+  def resume(player) do
+    GenServer.call(player, :resume)
   end
 
   @doc """
@@ -83,16 +87,16 @@ defmodule MIDIPlayer do
   corresponding bitstream of MIDI commands to be played at that time.
   The list is guaranteed to be ascending in time.
   """
-  @spec get_schedule() :: schedule()
-  def get_schedule do
-    GenServer.call(__MODULE__, :get_schedule)
+  @spec get_schedule(GenServer.server()) :: schedule()
+  def get_schedule(player) do
+    GenServer.call(player, :get_schedule)
   end
 
   # Server callbacks
 
   @impl GenServer
-  def init(_arg) do
-    {:ok, synth} = MIDISynth.start_link([])
+  def init(args) do
+    {:ok, synth} = MIDISynth.start_link(args)
 
     {:ok,
      %{

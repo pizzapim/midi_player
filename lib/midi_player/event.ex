@@ -11,24 +11,6 @@ defmodule MIDIPlayer.Event do
     """
 
     defstruct channel: 0, tone: 0, start_time: 0, end_time: 0, velocity: 0
-
-    @spec new(
-            MIDISynth.Command.channel(),
-            non_neg_integer(),
-            non_neg_integer(),
-            non_neg_integer(),
-            MIDISynth.Command.velocity()
-          ) :: %Note{}
-    def new(channel, tone, start_time, end_time, velocity)
-        when start_time >= 0 and end_time > start_time do
-      %__MODULE__{
-        channel: channel,
-        tone: tone,
-        start_time: start_time,
-        end_time: end_time,
-        velocity: velocity
-      }
-    end
   end
 
   defmodule ChangeProgram do
@@ -37,18 +19,36 @@ defmodule MIDIPlayer.Event do
     """
 
     defstruct channel: 0, time: 0, program: 0
-
-    @spec new(MIDISynth.Command.channel(), non_neg_integer(), non_neg_integer()) ::
-            %ChangeProgram{}
-    def new(channel, time, program) do
-      %__MODULE__{channel: channel, time: time, program: program}
-    end
   end
 
   @typedoc """
   A musical event.
   """
   @type t :: %Note{} | %ChangeProgram{}
+
+  @spec note(
+          MIDISynth.Command.channel(),
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          MIDISynth.Command.velocity()
+        ) :: %Note{}
+  def note(channel, tone, start_time, end_time, velocity)
+      when start_time >= 0 and end_time > start_time do
+    %Note{
+      channel: channel,
+      tone: tone,
+      start_time: start_time,
+      end_time: end_time,
+      velocity: velocity
+    }
+  end
+
+  @spec change_program(MIDISynth.Command.channel(), non_neg_integer(), non_neg_integer()) ::
+          %ChangeProgram{}
+  def change_program(channel, time, program) do
+    %ChangeProgram{channel: channel, time: time, program: program}
+  end
 
   @doc """
   Converts the event to a list of MIDI commands.
